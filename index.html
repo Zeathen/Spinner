@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Spin Wheel</title>
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<div class="container">
+		<div id="wheel-container">
+			<canvas id="wheel" width="300" height="300"></canvas>
+		</div>
+		<input type="text" id="option-input" placeholder="Enter options, separated by commas" />
+		<button id="apply-btn">Apply</button>
+		<button id="spin-btn">Spin</button>
+		<p id="result"></p>
+	</div>
+
+	<script>
+		const canvas = document.getElementById('wheel');
+		const ctx = canvas.getContext('2d');
+		let options = ["Option 1", "Option 2", "Option 3"];
+		let anglePerSegment;
+		let currentAngle = 0;
+		let spinAngle = 0;
+		let spinTimeout;
+		let resultText = document.getElementById('result');
+
+		// Pastel color palette
+		const pastelColors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#B2D9FE', '#C3FFB5', '#FFC2E2', '#FFD9E9'];
+
+		// Draw the wheel
+		function drawWheel() {
+			const totalOptions = options.length;
+			anglePerSegment = (2 * Math.PI) / totalOptions;
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			options.forEach((option, index) => {
+				const startAngle = index * anglePerSegment + currentAngle;
+				const endAngle = startAngle + anglePerSegment;
+
+				// Draw segment with a pastel color
+				ctx.beginPath();
+				ctx.moveTo(150, 150);
+				ctx.arc(150, 150, 150, startAngle, endAngle);
+				ctx.fillStyle = pastelColors[index % pastelColors.length];
+				ctx.fill();
+				ctx.stroke();
+
+				// Draw text
+				ctx.save();
+				ctx.translate(150, 150);
+				ctx.rotate((startAngle + endAngle) / 2);
+				ctx.textAlign = "right";
+				ctx.fillStyle = "#3d405b";
+				ctx.font = "14px Arial";
+				ctx.fillText(option, 140, 5);
+				ctx.restore();
+			});
+		}
+
+		// Spin the wheel
+		function spin() {
+			spinAngle = Math.random() * 10 + 20;
+			spinWheel();
+		}
+
+		function spinWheel() {
+			spinAngle *= 0.95;
+			currentAngle += spinAngle * 0.05;
+
+			if (spinAngle < 0.01) {
+				cancelAnimationFrame(spinTimeout);
+				displayWinner();
+				return;
+			}
+
+			drawWheel();
+			spinTimeout = requestAnimationFrame(spinWheel);
+		}
+
+		// Display the winning option
+		function displayWinner() {
+			const totalOptions = options.length;
+			const selectedIndex = Math.floor((2 * Math.PI - (currentAngle % (2 * Math.PI))) / anglePerSegment) % totalOptions;
+			const winner = options[selectedIndex];
+			resultText.textContent = `The winner is: ${winner}`;
+		}
+
+		// Apply new options
+		document.getElementById('apply-btn').addEventListener('click', () => {
+			const input = document.getElementById('option-input').value;
+			options = input.split(',').map(option => option.trim()).filter(option => option !== "");
+			if (options.length > 0) {
+				drawWheel();
+				resultText.textContent = ""; // Reset result on new options
+			}
+		});
+
+		// Spin button
+		document.getElementById('spin-btn').addEventListener('click', spin);
+
+		// Initial draw
+		drawWheel();
+	</script>
+</body>
+</html>
